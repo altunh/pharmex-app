@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String       @id @default(auto()) @map("_id") @db.ObjectId
+  sessions               Session[]
+  role                   Role         @relation(fields: [roleId], references: [id])
+  roleId                 String       @map("role_id") @db.ObjectId
+  email                  String       @unique
+  password               String
+  image                  String?
+  firstName              String?
+  lastName               String?
+  position               String?
+  representingCountry    String?
+  department             Department   @relation(fields: [departmentId], references: [id])
+  departmentId           String       @map("department_id") @db.ObjectId
+  createdAt              DateTime     @default(now()) @map("created_at")
+  updatedAt              DateTime     @default(now()) @map("updated_at")
+  verified               Boolean      @default(false)
+  authoredPages          Page[]
+  authoredCourses        Course[]     @relation("AuthoredCourse")
+  authoredCoursePosts    CoursePost[]
+  completedCourseIds     String[]     @map("completed_course_ids") @db.ObjectId
+  completedCourses       Course[]     @relation("CompletedCourse", fields: [completedCourseIds], references: [id])
+  completedCoursePostIds String[]     @map("completed_course_post_ids") @db.ObjectId
+  completedCoursePosts   CoursePost[] @relation("CompletedCoursePost", fields: [completedCoursePostIds], references: [id])
+
+  @@map(name: "users")
+}
+
+model Department {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  key             String        @unique
+  nameTranslation Translation[]
+  User            User[]
+
+  @@map(name: "departments")
+}
+
+model Role {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique
+  User User[]
+
+  @@map(name: "roles")
+}
+
+model VerificationToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  token   String   @unique
+  expires DateTime
+
+  @@unique([id, token])
+  @@map(name: "verification_tokens")
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String   @map("user_id") @db.ObjectId
+  expires      DateTime
+
+  @@map(name: "sessions")
+}
+
+model Page {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug       String
+  title      String
+  content    Json?
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String   @map("author_id") @db.ObjectId
+  language   Language @relation(fields: [languageId], references: [id])
+  languageId String   @map("language_id") @db.ObjectId
+
+  @@unique([slug, languageId])
+  @@map(name: "pages")
+}
+
+model Course {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  slug          String
+  title         String
+  description   Json?
+  published     Boolean      @default(false)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @map("updated_at")
+  language      Language     @relation(fields: [languageId], references: [id])
+  languageId    String       @map("language_id") @db.ObjectId
+  completedBy   User[]       @relation(name: "CompletedCourse", fields: [completedById], references: [id])
+  completedById String[]     @map("completed_by_id") @db.ObjectId
+  author        User         @relation(name: "AuthoredCourse", fields: [authorId], references: [id])
+  authorId      String       @map("author_id") @db.ObjectId
+  posts         CoursePost[]
+
+  @@unique([slug, languageId])
+  @@map(name: "courses")
+}
+
+model CoursePost {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  content       Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @map("updated_at")
+  course        Course   @relation(fields: [courseId], references: [id])
+  courseId      String   @map("course_id") @db.ObjectId
+  completedBy   User[]   @relation(name: "CompletedCoursePost", fields: [completedById], references: [id])
+  completedById String[] @map("completed_by_id") @db.ObjectId
+  author        User     @relation(fields: [authorId], references: [id])
+  authorId      String   @map("author_id") @db.ObjectId
+
+  @@map(name: "course_posts")
+}
+
+model Language {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  code        String        @unique
+  Translation Translation[]
+  Page        Page[]
+  Course      Course[]
+
+  @@map(name: "languages")
+}
+
+model Translation {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  key        String
+  value      String
+  language   Language    @relation(fields: [languageId], references: [id])
+  languageId String      @map("language_id") @db.ObjectId
+  Department Department? @relation(fields: [key], references: [key])
+
+  @@unique([key, languageId])
+  @@map("translations")
+}
