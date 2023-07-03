@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSelectedLayoutSegment } from "next/navigation"
 import localFont from "next/font/local"
 import { NavItem } from "@/types"
-import { CheckmarkRounded } from "./logo"
+import { CheckmarkRounded } from "@/components/logos"
 import { cn } from "@/lib/utils"
 
 
@@ -20,8 +20,8 @@ export function MainHeader({ items, children }: MainHeaderProps) {
     return (
         <div className="flex gap-6 md:gap-10">
             <Link href="/" className="hidden items-center space-x-2 md:flex">
-                <CheckmarkRounded className="w-8 h-8" />
-                <span className="hidden font-bold sm:inline-block">Pharmex</span>
+                <CheckmarkRounded width={32} height={32} />
+                <span className="hidden font-heading font-bold sm:inline-block">Pharmex</span>
             </Link>
             {items?.length ? (
                 <nav className="hidden gap-6 md:flex">
